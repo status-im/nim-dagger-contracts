@@ -23,3 +23,11 @@ web3suite "Staking":
     discard await storage.increaseStake(stakeAmount).send()
     let stake = await storage.stake(accounts[0]).call()
     check stake == stakeAmount
+
+  test "withdraws stake":
+    discard await token.approve(storage.contractAddress, stakeAmount).send()
+    discard await storage.increaseStake(stakeAmount).send()
+    let balanceBefore = await token.balanceOf(accounts[0]).call()
+    discard await storage.withdrawStake().send()
+    let balanceAfter = await token.balanceOf(accounts[0]).call()
+    check (balanceAfter - balanceBefore) == stakeAmount
