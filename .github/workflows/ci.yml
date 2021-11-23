@@ -31,7 +31,11 @@ jobs:
       run: npm install
     - name: Run dagger-contracts test node
       working-directory: dagger-contracts
-      run: npm start &
+      run: |
+        # https://github.com/wighawag/hardhat-deploy/issues/168#issuecomment-919096130
+        npx hardhat node --no-deploy &
+        sleep 3
+        npx hardhat deploy --network localhost --export 'deployment-localhost.json'
     - name: Build
       working-directory: nim-dagger-contracts
       run: nimble install -y
