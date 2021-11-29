@@ -47,4 +47,5 @@ template web3suite*(name, body) =
     body
 
 export evm
+export web3
 export asynctest
