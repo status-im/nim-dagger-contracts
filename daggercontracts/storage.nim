@@ -34,4 +34,5 @@ contract(Storage):
   proc proofEnd(id: BidHash): UInt256
   proc isProofRequired(id: BidHash, blocknumber: UInt256): Bool
   proc submitProof(id: BidHash, blocknumber: UInt256, proof: Bool)
+  proc markProofAsMissing(id: BidHash, blocknumber: UInt256)
   proc finishContract(id: BidHash)
