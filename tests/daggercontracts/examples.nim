@@ -19,6 +19,11 @@ proc example*(_: type StorageRequest): StorageRequest =
 proc example*(_: type StorageBid): StorageBid =
   StorageBid(
     requestHash: hashRequest(StorageRequest.example),
-    bidExpiry: getTime().toUnix.u256,
+    bidExpiry: (getTime() + initDuration(hours=1)).toUnix.u256,
     price: 42.u256
   )
+
+proc example*(_: type (StorageRequest, StorageBid)): (StorageRequest, StorageBid) =
+  result[0] = StorageRequest.example
+  result[1] = StorageBid.example
+  result[1].requestHash = hashRequest(result[0])

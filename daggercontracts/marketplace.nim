@@ -4,6 +4,8 @@ import pkg/nimcrypto
 import pkg/chronos
 import pkg/web3
 
+export stint
+
 type
   StorageRequest* = object
     duration*: UInt256
