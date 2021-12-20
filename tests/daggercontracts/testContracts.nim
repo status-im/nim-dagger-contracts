@@ -65,6 +65,11 @@ web3suite "Storage contracts":
         discard await web3.provider.evmMine()
     return blocknumber
 
+  proc mineUntilEnd(id: FixedBytes[32]) {.async.} =
+    let proofEnd = await storage.proofEnd(id).call()
+    while (await web3.minedBlockNumber()) < proofEnd:
+      discard await web3.provider.evmMine()
+
   test "can be created":
     let id = await newContract()
     check (await storage.duration(id).call()) == request.duration
@@ -88,3 +93,10 @@ web3suite "Storage contracts":
     discard await storage.startContract(id).send()
     let blocknumber = await mineUntilProofRequired(id)
     discard await storage.submitProof(id, blocknumber, Bool.parse(true)).send()
+
+  test "can be finished":
+    let id = await newContract()
+    web3.defaultAccount = host
+    discard await storage.startContract(id).send()
+    await mineUntilEnd(id)
+    discard await storage.finishContract(id).send()
