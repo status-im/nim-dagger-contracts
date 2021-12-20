@@ -32,3 +32,5 @@ contract(Storage):
   proc host(id: BidHash): Address
   proc startContract(id: BidHash)
   proc proofEnd(id: BidHash): UInt256
+  proc isProofRequired(id: BidHash, blocknumber: UInt256): Bool
+  proc submitProof(id: BidHash, blocknumber: UInt256, proof: Bool)

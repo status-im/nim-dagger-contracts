@@ -50,6 +50,21 @@ web3suite "Storage contracts":
     let id = bidHash.toFixed
     return id
 
+  proc minedBlockNumber(web3: Web3): Future[UInt256] {.async.} =
+    let blocknumber = await web3.provider.ethBlockNumber()
+    return blocknumber.uint64.u256
+
+  proc mineUntilProofRequired(id: FixedBytes[32]): Future[UInt256] {.async.} =
+    var blocknumber: UInt256
+    var done = false
+    while not done:
+      blocknumber = await web3.minedBlockNumber()
+      let isRequired = await storage.isProofRequired(id, blocknumber).call()
+      done = (isRequired == Bool.parse(true))
+      if not done:
+        discard await web3.provider.evmMine()
+    return blocknumber
+
   test "can be created":
     let id = await newContract()
     check (await storage.duration(id).call()) == request.duration
@@ -66,3 +81,10 @@ web3suite "Storage contracts":
     discard await storage.startContract(id).send()
     let proofEnd = await storage.proofEnd(id).call()
     check proofEnd > 0
+
+  test "accept storage proofs":
+    let id = await newContract()
+    web3.defaultAccount = host
+    discard await storage.startContract(id).send()
+    let blocknumber = await mineUntilProofRequired(id)
+    discard await storage.submitProof(id, blocknumber, Bool.parse(true)).send()

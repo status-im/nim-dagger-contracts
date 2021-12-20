@@ -2,6 +2,8 @@ import pkg/asynctest
 import pkg/web3
 import ./web3test/evm
 
+export evm
+
 # Allow multiple setups and teardowns in a test suite
 template multisetup =
 
