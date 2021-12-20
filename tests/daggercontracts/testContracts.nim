@@ -24,7 +24,7 @@ web3suite "Storage contracts":
     discard await token.mint(host, 1000.u256).send()
     stakeAmount = await storage.stakeAmount.call()
 
-  test "can be created":
+  proc newContract(): Future[FixedBytes[32]] {.async.} =
     web3.defaultAccount = host
     discard await token.approve(storage.contractAddress, stakeAmount).send()
     discard await storage.increaseStake(stakeAmount).send()
@@ -34,7 +34,6 @@ web3suite "Storage contracts":
     let bidHash = hashBid(bid)
     let requestSignature = await web3.sign(client, requestHash)
     let bidSignature = await web3.sign(host, bidHash)
-
     discard await storage.newContract(
       request.duration,
       request.size,
@@ -48,8 +47,11 @@ web3suite "Storage contracts":
       requestSignature.toDynamic,
       bidSignature.toDynamic
     ).send()
-
     let id = bidHash.toFixed
+    return id
+
+  test "can be created":
+    let id = await newContract()
     check (await storage.duration(id).call()) == request.duration
     check (await storage.size(id).call()) == request.size
     check (await storage.contentHash(id).call()).toArray == request.contentHash
@@ -57,3 +59,10 @@ web3suite "Storage contracts":
     check (await storage.proofTimeout(id).call()) == request.proofTimeout
     check (await storage.price(id).call()) == bid.price
     check (await storage.host(id).call()) == host
+
+  test "can be started by the host":
+    let id = await newContract()
+    web3.defaultAccount = host
+    discard await storage.startContract(id).send()
+    let proofEnd = await storage.proofEnd(id).call()
+    check proofEnd > 0

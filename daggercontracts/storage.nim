@@ -30,3 +30,5 @@ contract(Storage):
   proc proofTimeout(id: BidHash): UInt256
   proc price(id: BidHash): UInt256
   proc host(id: BidHash): Address
+  proc startContract(id: BidHash)
+  proc proofEnd(id: BidHash): UInt256
