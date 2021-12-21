@@ -1,38 +1,119 @@
 import pkg/web3
+import pkg/json_rpc/rpcclient
 import pkg/stint
+import pkg/chronos
+import ./web3/storage
 
 export stint
 
-type BidHash = FixedBytes[32]
+type
+  Storage* = object
+    sender: Sender[Web3Storage]
+  EthAddress = array[20, byte] | Address
+  Id = array[32, byte]
 
-contract(Storage):
-  proc stakeAmount: UInt256
-  proc increaseStake(amount: UInt256)
-  proc withdrawStake()
-  proc stake(host: Address): UInt256
-  proc newContract(
-    duration: UInt256,
-    size: UInt256,
-    contentHash: FixedBytes[32],
-    proofPeriod: UInt256,
-    proofTimeout: UInt256,
-    nonce: FixedBytes[32],
-    price: UInt256,
-    host: Address,
-    bidExpiry: UInt256,
-    requestSignature: DynamicBytes,
-    bidSignature: DynamicBytes
+proc at*(_: type Storage, provider: RpcClient, address: EthAddress): Storage =
+  let sender = newWeb3(provider).contractSender(Web3Storage, Address(address))
+  Storage(sender: sender)
+
+proc use*(storage: Storage, account: EthAddress): Storage =
+  let provider = storage.sender.web3.provider
+  let address = storage.sender.contractAddress
+  result = Storage.at(provider, address)
+  result.sender.web3.defaultAccount = Address(account)
+
+proc address*(storage: Storage): array[20, byte] =
+  array[20, byte](storage.sender.contractAddress)
+
+proc stakeAmount*(storage: Storage): Future[UInt256] =
+  storage.sender.stakeAmount.call()
+
+proc increaseStake*(storage: Storage, amount: UInt256) {.async.} =
+  discard await storage.sender.increaseStake(amount).send()
+
+proc withdrawStake*(storage: Storage) {.async.} =
+  discard await storage.sender.withdrawStake().send()
+
+proc stake*(storage: Storage, account: EthAddress): Future[UInt256] =
+  storage.sender.stake(Address(account)).call()
+
+proc newContract*(storage: Storage,
+                  duration: UInt256,
+                  size: UInt256,
+                  contentHash: array[32, byte],
+                  proofPeriod: UInt256,
+                  proofTimeout: UInt256,
+                  nonce: array[32, byte],
+                  price: UInt256,
+                  host: EthAddress,
+                  bidExpiry: UInt256,
+                  requestSignature: seq[byte],
+                  bidSignature: seq[byte]) {.async.} =
+  let invocation = storage.sender.newContract(
+    duration,
+    size,
+    FixedBytes[32](contentHash),
+    proofPeriod,
+    proofTimeout,
+    FixedBytes[32](nonce),
+    price,
+    Address(host),
+    bidExpiry,
+    DynamicBytes[0, int.high](requestSignature),
+    DynamicBytes[0, int.high](bidSignature)
   )
-  proc duration(id: BidHash): UInt256
-  proc size(id: BidHash): UInt256
-  proc contentHash(id: BidHash): FixedBytes[32]
-  proc proofPeriod(id: BidHash): UInt256
-  proc proofTimeout(id: BidHash): UInt256
-  proc price(id: BidHash): UInt256
-  proc host(id: BidHash): Address
-  proc startContract(id: BidHash)
-  proc proofEnd(id: BidHash): UInt256
-  proc isProofRequired(id: BidHash, blocknumber: UInt256): Bool
-  proc submitProof(id: BidHash, blocknumber: UInt256, proof: Bool)
-  proc markProofAsMissing(id: BidHash, blocknumber: UInt256)
-  proc finishContract(id: BidHash)
+  discard await invocation.send()
+
+proc duration*(storage: Storage, id: Id): Future[UInt256] =
+  storage.sender.duration(FixedBytes[32](id)).call()
+
+proc size*(storage: Storage, id: Id): Future[UInt256] =
+  storage.sender.size(FixedBytes[32](id)).call()
+
+proc contentHash*(storage: Storage, id: Id): Future[array[32, byte]] {.async.} =
+  let hash = await storage.sender.contentHash(FixedBytes[32](id)).call()
+  result = array[32, byte](hash)
+
+proc proofPeriod*(storage: Storage, id: Id): Future[UInt256] =
+  storage.sender.proofPeriod(FixedBytes[32](id)).call()
+
+proc proofTimeout*(storage: Storage, id: Id): Future[UInt256] =
+  storage.sender.proofTimeout(FixedBytes[32](id)).call()
+
+proc price*(storage: Storage, id: Id): Future[UInt256] =
+  storage.sender.price(FixedBytes[32](id)).call()
+
+proc host*(storage: Storage, id: Id): Future[Address] =
+  storage.sender.host(FixedBytes[32](id)).call()
+
+proc startContract*(storage: Storage, id: Id) {.async.} =
+  discard await storage.sender.startContract(FixedBytes[32](id)).send()
+
+proc proofEnd*(storage: Storage, id: Id): Future[UInt256] =
+  storage.sender.proofEnd(FixedBytes[32](id)).call()
+
+proc isProofRequired*(storage: Storage,
+                      id: Id,
+                      blocknumber: UInt256): Future[bool] {.async.} =
+  let sender = storage.sender
+  let invocation = sender.isProofRequired(FixedBytes[32](id), blocknumber)
+  result = ((await invocation.call()) == Bool.parse(true))
+
+proc submitProof*(storage: Storage,
+                  id: Id,
+                  blocknumber: UInt256,
+                  proof: Bool) {.async.} =
+  let sender = storage.sender
+  let invocation = sender.submitProof(FixedBytes[32](id), blocknumber, proof)
+  discard await invocation.send()
+
+proc markProofAsMissing*(storage: Storage,
+                          id: Id,
+                          blocknumber: UInt256) {.async.} =
+  let sender = storage.sender
+  let invocation = sender.markProofAsMissing(FixedBytes[32](id), blocknumber)
+  discard await invocation.send()
+
+proc finishContract*(storage: Storage, id: Id) {.async.} =
+  let invocation = storage.sender.finishContract(FixedBytes[32](id))
+  discard await invocation.send()
