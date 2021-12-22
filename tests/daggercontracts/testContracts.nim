@@ -24,7 +24,6 @@ web3suite "Storage contracts":
     stakeAmount = await storage.stakeAmount()
 
   proc newContract(): Future[array[32, byte]] {.async.} =
-    web3.defaultAccount = host
     await token.use(host).approve(Address(storage.address), stakeAmount)
     await storage.use(host).increaseStake(stakeAmount)
     await token.use(client).approve(Address(storage.address), bid.price)
