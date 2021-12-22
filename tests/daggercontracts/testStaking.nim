@@ -10,26 +10,28 @@ web3suite "Staking":
   let stakeAmount = 100.u256
 
   var storage: Storage
-  var token: Sender[TestToken]
+  var token: TestToken
 
   setup:
     let deployment = deployment()
     storage = Storage
       .at(web3.provider, deployment.address(Storage))
       .use(accounts[0])
-    token = web3.contractSender(TestToken, deployment.address(TestToken))
-    discard await token.mint(accounts[0], 1000.u256).send()
+    token = TestToken
+      .at(web3.provider, deployment.address(TestToken))
+      .use(accounts[0])
+    await token.mint(accounts[0], 1000.u256)
 
   test "increases stake":
-    discard await token.approve(Address(storage.address), stakeAmount).send()
+    await token.approve(storage.address, stakeAmount)
     await storage.increaseStake(stakeAmount)
     let stake = await storage.stake(accounts[0])
     check stake == stakeAmount
 
   test "withdraws stake":
-    discard await token.approve(Address(storage.address), stakeAmount).send()
+    await token.approve(storage.address, stakeAmount)
     await storage.increaseStake(stakeAmount)
-    let balanceBefore = await token.balanceOf(accounts[0]).call()
+    let balanceBefore = await token.balanceOf(accounts[0])
     await storage.withdrawStake()
-    let balanceAfter = await token.balanceOf(accounts[0]).call()
+    let balanceAfter = await token.balanceOf(accounts[0])
     check (balanceAfter - balanceBefore) == stakeAmount

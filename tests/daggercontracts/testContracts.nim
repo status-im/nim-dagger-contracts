@@ -10,7 +10,7 @@ web3suite "Storage contracts":
 
   var client, host: Address
   var storage: Storage
-  var token: Sender[TestToken]
+  var token: TestToken
   var stakeAmount: UInt256
 
   setup:
@@ -18,24 +18,21 @@ web3suite "Storage contracts":
     client = accounts[0]
     host = accounts[1]
     storage = Storage.at(web3.provider, deployment.address(Storage))
-    token = web3.contractSender(TestToken, deployment.address(TestToken))
-    discard await token.mint(client, 1000.u256).send()
-    discard await token.mint(host, 1000.u256).send()
+    token = TestToken.at(web3.provider, deployment.address(TestToken))
+    await token.use(client).mint(client, 1000.u256)
+    await token.use(host).mint(host, 1000.u256)
     stakeAmount = await storage.stakeAmount()
 
   proc newContract(): Future[array[32, byte]] {.async.} =
     web3.defaultAccount = host
-    storage = storage.use(host)
-    discard await token.approve(Address(storage.address), stakeAmount).send()
-    await storage.increaseStake(stakeAmount)
-    web3.defaultAccount = client
-    storage = storage.use(client)
-    discard await token.approve(Address(storage.address), bid.price).send()
+    await token.use(host).approve(Address(storage.address), stakeAmount)
+    await storage.use(host).increaseStake(stakeAmount)
+    await token.use(client).approve(Address(storage.address), bid.price)
     let requestHash = hashRequest(request)
     let bidHash = hashBid(bid)
     let requestSignature = await web3.sign(client, requestHash)
     let bidSignature = await web3.sign(host, bidHash)
-    await storage.newContract(
+    await storage.use(client).newContract(
       request.duration,
       request.size,
       request.contentHash,
@@ -87,29 +84,25 @@ web3suite "Storage contracts":
 
   test "can be started by the host":
     let id = await newContract()
-    storage = storage.use(host)
-    await storage.startContract(id)
+    await storage.use(host).startContract(id)
     let proofEnd = await storage.proofEnd(id)
     check proofEnd > 0
 
   test "accept storage proofs":
     let id = await newContract()
-    storage = storage.use(host)
-    await storage.startContract(id)
+    await storage.use(host).startContract(id)
     let blocknumber = await mineUntilProofRequired(id)
-    await storage.submitProof(id, blocknumber, Bool.parse(true))
+    await storage.use(host).submitProof(id, blocknumber, Bool.parse(true))
 
   test "marks missing proofs":
     let id = await newContract()
-    storage = storage.use(host)
-    await storage.startContract(id)
+    await storage.use(host).startContract(id)
     let blocknumber = await mineUntilProofRequired(id)
     await mineUntilProofTimeout(id)
-    await storage.markProofAsMissing(id, blocknumber)
+    await storage.use(client).markProofAsMissing(id, blocknumber)
 
   test "can be finished":
     let id = await newContract()
-    storage = storage.use(host)
-    await storage.startContract(id)
+    await storage.use(host).startContract(id)
     await mineUntilEnd(id)
-    await storage.finishContract(id)
+    await storage.use(host).finishContract(id)
