@@ -2,25 +2,15 @@ import pkg/web3
 import pkg/json_rpc/rpcclient
 import pkg/stint
 import pkg/chronos
+import ./web3/contract
 import ./web3/storage
 
 export stint
+export contract
 
 type
-  Storage* = object
-    sender: Sender[Web3Storage]
-  EthAddress = array[20, byte] | Address
+  Storage* = Contract[Web3Storage]
   Id = array[32, byte]
-
-proc at*(_: type Storage, provider: RpcClient, address: EthAddress): Storage =
-  let sender = newWeb3(provider).contractSender(Web3Storage, Address(address))
-  Storage(sender: sender)
-
-proc use*(storage: Storage, account: EthAddress): Storage =
-  let provider = storage.sender.web3.provider
-  let address = storage.sender.contractAddress
-  result = Storage.at(provider, address)
-  result.sender.web3.defaultAccount = Address(account)
 
 proc address*(storage: Storage): array[20, byte] =
   array[20, byte](storage.sender.contractAddress)
