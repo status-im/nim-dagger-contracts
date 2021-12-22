@@ -86,7 +86,7 @@ web3suite "Storage contracts":
     let id = await newContract()
     await storage.use(host).startContract(id)
     let blocknumber = await mineUntilProofRequired(id)
-    await storage.use(host).submitProof(id, blocknumber, Bool.parse(true))
+    await storage.use(host).submitProof(id, blocknumber, true)
 
   test "marks missing proofs":
     let id = await newContract()

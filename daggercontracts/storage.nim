@@ -87,8 +87,9 @@ proc isProofRequired*(storage: Storage,
 proc submitProof*(storage: Storage,
                   id: Id,
                   blocknumber: UInt256,
-                  proof: Bool) {.async.} =
+                  proof: bool) {.async.} =
   let sender = storage.sender
+  let proof = Bool.parse(proof)
   let invocation = sender.submitProof(FixedBytes[32](id), blocknumber, proof)
   discard await invocation.send()
 
