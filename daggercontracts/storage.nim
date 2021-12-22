@@ -4,6 +4,7 @@ import pkg/stint
 import pkg/chronos
 import ./web3/contract
 import ./web3/storage
+import ./marketplace
 
 export stint
 export contract
@@ -28,29 +29,23 @@ proc stake*(storage: Storage, account: EthAddress): Future[UInt256] =
   storage.sender.stake(Address(account)).call()
 
 proc newContract*(storage: Storage,
-                  duration: UInt256,
-                  size: UInt256,
-                  contentHash: array[32, byte],
-                  proofPeriod: UInt256,
-                  proofTimeout: UInt256,
-                  nonce: array[32, byte],
-                  price: UInt256,
+                  request: StorageRequest,
+                  bid: StorageBid,
                   host: EthAddress,
-                  bidExpiry: UInt256,
-                  requestSignature: seq[byte],
-                  bidSignature: seq[byte]) {.async.} =
+                  requestSignature: array[65, byte],
+                  bidSignature: array[65, byte]) {.async.} =
   let invocation = storage.sender.newContract(
-    duration,
-    size,
-    FixedBytes[32](contentHash),
-    proofPeriod,
-    proofTimeout,
-    FixedBytes[32](nonce),
-    price,
+    request.duration,
+    request.size,
+    FixedBytes[32](request.contentHash),
+    request.proofPeriod,
+    request.proofTimeout,
+    FixedBytes[32](request.nonce),
+    bid.price,
     Address(host),
-    bidExpiry,
-    DynamicBytes[0, int.high](requestSignature),
-    DynamicBytes[0, int.high](bidSignature)
+    bid.bidExpiry,
+    DynamicBytes[0, int.high](@requestSignature),
+    DynamicBytes[0, int.high](@bidSignature)
   )
   discard await invocation.send()
 

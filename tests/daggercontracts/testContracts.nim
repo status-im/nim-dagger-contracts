@@ -33,17 +33,11 @@ web3suite "Storage contracts":
     let requestSignature = await web3.sign(client, requestHash)
     let bidSignature = await web3.sign(host, bidHash)
     await storage.use(client).newContract(
-      request.duration,
-      request.size,
-      request.contentHash,
-      request.proofPeriod,
-      request.proofTimeout,
-      request.nonce,
-      bid.price,
+      request,
+      bid,
       host,
-      bid.bidExpiry,
-      @requestSignature,
-      @bidSignature
+      requestSignature,
+      bidSignature
     )
     let id = bidHash
     return id
