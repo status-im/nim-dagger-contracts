@@ -1,5 +1,4 @@
 import pkg/chronos
-import pkg/web3
 import pkg/stint
 import daggercontracts
 import daggercontracts/testtoken
