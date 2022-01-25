@@ -1,5 +1,5 @@
 import pkg/stint
-import pkg/contractabi
+import pkg/contractabi except Address
 import pkg/nimcrypto
 import pkg/chronos
 import pkg/web3
