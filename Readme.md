@@ -65,18 +65,20 @@ let bid = StorageBid(
 Signing a storage request or bid:
 
 ```nim
-import web3
+import ethers
 import chronos
 
 # Connect to an Ethereum node, and retrieve its accounts
-let web3 = await newWeb3("ws://localhost:8545")
-let accounts = await web3.getAccounts()
+let provider = JsonRpcProvider.new("ws://localhost:8545")
+let accounts = await provider.listAccounts()
 
 # Sign a request with the first account
-let requestSignature = await web3.sign(accounts[0], hashRequest(request))
+let client = provider.getSigner(accounts[0])
+let requestSignature = await signer.signMessage(@hashRequest(request))
 
 # Sign a bid with the second account
-let bidSignature = await web3.sign(accounts[1], hashBid(bid))
+let host = provider.getSigner(accounts[1])
+let bidSignature = await signer.signMessage(@hashBid(bid))
 ```
 
 Smart contract
@@ -86,7 +88,7 @@ Connecting to the smart contract on an Ethereum node:
 
 ```nim
 let address = # fill in address where the contract was deployed
-let storage = Storage.at(web3.provider, address)
+let storage = Storage.new(address, provider)
 ```
 
 Stakes
@@ -106,10 +108,8 @@ contracts is not part of this library.
 
 After preparing the payment, the host can lock up stake:
 ```nim
-let host = # Ethereum account of the host that signed the bid
-
 await storage
-  .use(host)
+  .connect(host)
   .increaseStake(stakeAmount)
 ```
 
@@ -117,7 +117,7 @@ When a host is not participating in storage contracts, it can release its stake:
 
 ```
 await storage
-  .use(host)
+  .connect(host)
   .withdrawStake()
 ```
 
@@ -133,10 +133,8 @@ Once the payment has been prepared, the client can register a new storage
 contract:
 
 ```nim
-let client = # Ethereum account of the client that signed the request
-
 await storage
-  .use(client)
+  .connect(client)
   .newContract(request, bid, host, requestSignature, bidSignature)
 ```
 
@@ -150,7 +148,7 @@ be stored:
 
 ```nim
 await storage
-  .use(host)
+  .connect(host)
   .startContract(id)
 ```
 
@@ -168,7 +166,7 @@ If a proof is required, the host can submit it before the timeout:
 
 ```nim
 await storage
-  .use(host)
+  .connect(host)
   .submitProof(id, blocknumber, proof)
 ```
 
@@ -176,10 +174,8 @@ If a proof is not submitted before the timeout, then a validator can mark
 a proof as missing:
 
 ```nim
-let validator = # Ethereum account of a validator
-
 await storage
-  .use(validator)
+  .connect(validator)
   .markProofAsMissing(id, blocknumber)
 ```
 
@@ -187,7 +183,7 @@ Once the storage contract is finished, the host can release payment:
 
 ```nim
 await storage
-  .use(host)
+  .connect(host)
   .finishContract(id)
 ```
 

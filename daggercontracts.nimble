@@ -3,7 +3,7 @@ author = "Dagger Contracts Authors"
 description = "Nim API for the Dagger smart contracts"
 license = "MIT"
 
-requires "https://github.com/markspanbroek/nim-web3#fix-encoding"
+requires "https://github.com/status-im/nim-ethers >= 0.1.0 & < 0.2.0"
 requires "stint"
 requires "byteutils"
 requires "nimcrypto"

@@ -3,7 +3,7 @@ import pkg/chronos
 import pkg/nimcrypto
 import pkg/contractabi
 import daggercontracts
-import ./web3test
+import ./ethertest
 import ./examples
 
 suite "Marketplace":
@@ -33,10 +33,10 @@ suite "Marketplace":
     let expectedHash = keccak256.digest(encoding).data
     check hashBid(bid) == expectedHash
 
-web3suite "Marketplace signatures":
+ethersuite "Marketplace signatures":
 
   test "signs request and bid hashes":
     let hash = hashRequest(StorageRequest.example)
-    let signature = await web3.sign(accounts[0], hash)
+    let signer = provider.getSigner()
+    let signature = await signer.signMessage(@hash)
     check signature.len == 65
-    check signature != array[65, byte].default
