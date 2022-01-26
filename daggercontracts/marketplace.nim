@@ -2,7 +2,6 @@ import pkg/stint
 import pkg/contractabi except Address
 import pkg/nimcrypto
 import pkg/chronos
-import pkg/web3
 
 export stint
 
@@ -41,9 +40,3 @@ func hashBid*(bid: StorageBid): Hash =
     bid.price
   )
   keccak256.digest(encoding).data
-
-proc sign*(web3: Web3,
-           account: Address,
-           hash: Hash): Future[Signature] {.async.} =
-  let bytes = await web3.provider.ethSign(account, "0x" & hash.toHex)
-  result[Signature.low..Signature.high] = bytes

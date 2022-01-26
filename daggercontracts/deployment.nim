@@ -1,5 +1,6 @@
 import std/json
-import pkg/web3
+import pkg/ethers
+import pkg/questionable
 
 type Deployment* = object
   json: JsonNode
@@ -13,6 +14,6 @@ const defaultFile = "../dagger-contracts/deployment-localhost.json"
 proc deployment*(file = defaultFile): Deployment =
   Deployment(json: parseFile(file))
 
-proc address*(deployment: Deployment, Contract: typedesc): Address =
+proc address*(deployment: Deployment, Contract: typedesc): ?Address =
   let address = deployment.json["contracts"][$Contract]["address"].getStr()
-  Address.fromHex(address)
+  Address.init(address)

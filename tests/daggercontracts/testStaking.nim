@@ -2,9 +2,9 @@ import pkg/chronos
 import pkg/stint
 import daggercontracts
 import daggercontracts/testtoken
-import ./web3test
+import ./ethertest
 
-web3suite "Staking":
+ethersuite "Staking":
 
   let stakeAmount = 100.u256
 
@@ -13,12 +13,8 @@ web3suite "Staking":
 
   setup:
     let deployment = deployment()
-    storage = Storage
-      .at(web3.provider, deployment.address(Storage))
-      .use(accounts[0])
-    token = TestToken
-      .at(web3.provider, deployment.address(TestToken))
-      .use(accounts[0])
+    storage = Storage.new(!deployment.address(Storage), provider.getSigner())
+    token = TestToken.new(!deployment.address(TestToken), provider.getSigner())
     await token.mint(accounts[0], 1000.u256)
 
   test "increases stake":
