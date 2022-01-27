@@ -1,4 +1,5 @@
 import pkg/chronos
+import pkg/nimcrypto
 import daggercontracts
 import daggercontracts/testtoken
 import ./web3test
